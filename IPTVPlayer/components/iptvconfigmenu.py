@@ -53,8 +53,8 @@ config.plugins.iptvplayer.plarform        = ConfigSelection(default = "auto", ch
 config.plugins.iptvplayer.showcover          = ConfigYesNo(default = True)
 config.plugins.iptvplayer.deleteIcons        = ConfigSelection(default = "3", choices = [("0", _("after closing")),("1", _("after day")),("3", _("after three days")),("7", _("after a week"))]) 
 config.plugins.iptvplayer.allowedcoverformats= ConfigSelection(default = "jpeg,png", choices = [("jpeg,png,gif", _("jpeg,png,gif")),("jpeg,png", _("jpeg,png")),("jpeg", _("jpeg")),("all", _("all"))]) 
-config.plugins.iptvplayer.showinextensions   = ConfigYesNo(default = True)
-config.plugins.iptvplayer.showinMainMenu     = ConfigYesNo(default = False)
+config.plugins.iptvplayer.showinextensions   = ConfigYesNo(default = False)
+config.plugins.iptvplayer.showinMainMenu     = ConfigYesNo(default = True)
 config.plugins.iptvplayer.ListaGraficzna     = ConfigYesNo(default = True)
 config.plugins.iptvplayer.NaszaSciezka       = ConfigDirectory(default = "/hdd/movie/") #, fixed_size = False)
 config.plugins.iptvplayer.bufferingPath      = ConfigDirectory(default = config.plugins.iptvplayer.NaszaSciezka.value) #, fixed_size = False)
@@ -68,7 +68,7 @@ config.plugins.iptvplayer.IPTVDMRunAtStart      = ConfigYesNo(default = False)
 config.plugins.iptvplayer.IPTVDMShowAfterAdd    = ConfigYesNo(default = True)
 config.plugins.iptvplayer.IPTVDMMaxDownloadItem = ConfigSelection(default = "1", choices = [("1", "1"),("2", "2"),("3", "3"),("4", "4")])
 
-config.plugins.iptvplayer.AktualizacjaWmenu = ConfigYesNo(default = True)
+config.plugins.iptvplayer.AktualizacjaWmenu = ConfigYesNo(default = False)
 config.plugins.iptvplayer.sortuj = ConfigYesNo(default = True)
 config.plugins.iptvplayer.remove_diabled_hosts = ConfigYesNo(default = False)
 
@@ -165,7 +165,7 @@ config.plugins.iptvplayer.alternative_proxy1 = ConfigText(default = "http://user
 config.plugins.iptvplayer.alternative_proxy2 = ConfigText(default = "http://user:pass@ip:port", fixed_size = False)
 
 # Update
-config.plugins.iptvplayer.autoCheckForUpdate = ConfigYesNo(default = True)
+config.plugins.iptvplayer.autoCheckForUpdate = ConfigYesNo(default = False)
 config.plugins.iptvplayer.updateLastCheckedVersion = ConfigText(default = "00.00.00.00", fixed_size = False)
 config.plugins.iptvplayer.fakeUpdate               = ConfigSelection(default = "fake", choices = [("fake", "  ")])
 config.plugins.iptvplayer.downgradePossible        = ConfigYesNo(default = False)
@@ -198,10 +198,10 @@ gListOfHostsNames = GetHostsList()
 for hostName in gListOfHostsNames:
     try:
         # as default all hosts are enabled
-        if hostName in ['ipla']:
-            enabledByDefault = 'False'
-        else:
+        if hostName in ['hostdrdk', 'hostsvtplayse', 'hostvevo', 'hostyoutube']:
             enabledByDefault = 'True'
+        else:
+            enabledByDefault = 'False'
         exec('config.plugins.iptvplayer.host' + hostName + ' = ConfigIPTVHostOnOff(default = ' + enabledByDefault + ')')
     except Exception:
         printExc(hostName)
@@ -249,9 +249,9 @@ class ConfigMenu(ConfigBaseWidget):
             list.append(getConfigListEntry("f4mdumppath", config.plugins.iptvplayer.f4mdumppath))
             list.append(getConfigListEntry("uchardetpath", config.plugins.iptvplayer.uchardetpath))
         
-        list.append( getConfigListEntry(_("Auto check for plugin update"), config.plugins.iptvplayer.autoCheckForUpdate) )
+        #list.append( getConfigListEntry(_("Auto check for plugin update"), config.plugins.iptvplayer.autoCheckForUpdate) )
         list.append( getConfigListEntry(_("Update"), config.plugins.iptvplayer.fakeUpdate) )
-        list.append( getConfigListEntry(_("Platform"), config.plugins.iptvplayer.plarform) )
+        #list.append( getConfigListEntry(_("Platform"), config.plugins.iptvplayer.plarform) )
         list.append( getConfigListEntry(_("Services configuration"), config.plugins.iptvplayer.fakeHostsList) )
         list.append( getConfigListEntry(_("Remove disabled services"), config.plugins.iptvplayer.remove_diabled_hosts) )
         list.append( getConfigListEntry(_("Disable live at plugin start"), config.plugins.iptvplayer.disable_live))
@@ -372,11 +372,11 @@ class ConfigMenu(ConfigBaseWidget):
         list.append(getConfigListEntry(_("The number of items in the search history"), config.plugins.iptvplayer.search_history_size))
         list.append(getConfigListEntry(_("Block wmv files"), config.plugins.iptvplayer.ZablokujWMV))
         list.append(getConfigListEntry(_("Show IPTVPlayer in extension list"), config.plugins.iptvplayer.showinextensions))
-        list.append(getConfigListEntry(_("Show IPTVPlayer in main menu"), config.plugins.iptvplayer.showinMainMenu))
-        list.append(getConfigListEntry(_("Show update icon in service selection menu"), config.plugins.iptvplayer.AktualizacjaWmenu))
-        list.append(getConfigListEntry(_("Debug logs"), config.plugins.iptvplayer.debugprint))
-        list.append(getConfigListEntry(_("Allow downgrade"), config.plugins.iptvplayer.downgradePossible))
-        list.append(getConfigListEntry(_("Update packet type"), config.plugins.iptvplayer.possibleUpdateType))
+        #list.append(getConfigListEntry(_("Show IPTVPlayer in main menu"), config.plugins.iptvplayer.showinMainMenu))
+        #list.append(getConfigListEntry(_("Show update icon in service selection menu"), config.plugins.iptvplayer.AktualizacjaWmenu))
+        #list.append(getConfigListEntry(_("Debug logs"), config.plugins.iptvplayer.debugprint))
+        #list.append(getConfigListEntry(_("Allow downgrade"), config.plugins.iptvplayer.downgradePossible))
+        #list.append(getConfigListEntry(_("Update packet type"), config.plugins.iptvplayer.possibleUpdateType))
 
     def runSetup(self):
         self.list = []

@@ -29,7 +29,8 @@ def Plugins(**kwargs):
     if screenwidth and screenwidth == 1920: iconFile = "icons/iptvlogohd.png"
     else: iconFile = "icons/iptvlogo.png"
     desc = _("Watch video materials from IPTV services")
-    list = [PluginDescriptor(name=(_("IPTV Player")), description=desc, where = [PluginDescriptor.WHERE_PLUGINMENU], icon=iconFile, fnc=main)] # always show in plugin menu
+    #list = [PluginDescriptor(name=(_("IPTV Player")), description=desc, where = [PluginDescriptor.WHERE_PLUGINMENU], icon=iconFile, fnc=main)] # always show in plugin menu
+    list = []
     list.append(PluginDescriptor(name=(_("IPTV Player")), description=desc, where = PluginDescriptor.WHERE_MENU, fnc=startIPTVfromMenu))
     if config.plugins.iptvplayer.showinextensions.value:
         list.append (PluginDescriptor(name=(_("IPTV Player")), description=desc, where = [PluginDescriptor.WHERE_EXTENSIONSMENU], fnc=main))
