@@ -198,7 +198,7 @@ gListOfHostsNames = GetHostsList()
 for hostName in gListOfHostsNames:
     try:
         # as default all hosts are enabled
-        if hostName in ['hostdrdk', 'hostsvtplayse', 'hostvevo', 'hostyoutube']:
+        if hostName in ['hostdrdk', 'hostsvtplayse', 'hostvevo', 'hostyoutube', 'hostmovie4kto']:
             enabledByDefault = 'True'
         else:
             enabledByDefault = 'False'
@@ -250,25 +250,25 @@ class ConfigMenu(ConfigBaseWidget):
             list.append(getConfigListEntry("uchardetpath", config.plugins.iptvplayer.uchardetpath))
         
         #list.append( getConfigListEntry(_("Auto check for plugin update"), config.plugins.iptvplayer.autoCheckForUpdate) )
-        list.append( getConfigListEntry(_("Update"), config.plugins.iptvplayer.fakeUpdate) )
+        #list.append( getConfigListEntry(_("Update"), config.plugins.iptvplayer.fakeUpdate) )
         #list.append( getConfigListEntry(_("Platform"), config.plugins.iptvplayer.plarform) )
         list.append( getConfigListEntry(_("Services configuration"), config.plugins.iptvplayer.fakeHostsList) )
-        list.append( getConfigListEntry(_("Remove disabled services"), config.plugins.iptvplayer.remove_diabled_hosts) )
-        list.append( getConfigListEntry(_("Disable live at plugin start"), config.plugins.iptvplayer.disable_live))
-        list.append( getConfigListEntry(_("Pin protection for plugin"), config.plugins.iptvplayer.pluginProtectedByPin))
-        list.append( getConfigListEntry(_("Pin protection for configuration"), config.plugins.iptvplayer.configProtectedByPin) )
+        #list.append( getConfigListEntry(_("Remove disabled services"), config.plugins.iptvplayer.remove_diabled_hosts) )
+        #list.append( getConfigListEntry(_("Disable live at plugin start"), config.plugins.iptvplayer.disable_live))
+        #list.append( getConfigListEntry(_("Pin protection for plugin"), config.plugins.iptvplayer.pluginProtectedByPin))
+        #list.append( getConfigListEntry(_("Pin protection for configuration"), config.plugins.iptvplayer.configProtectedByPin) )
         if config.plugins.iptvplayer.pluginProtectedByPin.value or config.plugins.iptvplayer.configProtectedByPin.value:
             list.append( getConfigListEntry(_("Set pin code"), config.plugins.iptvplayer.fakePin) )
         
-        list.append(getConfigListEntry(_("Skin"), config.plugins.iptvplayer.skin))
+        #list.append(getConfigListEntry(_("Skin"), config.plugins.iptvplayer.skin))
         list.append(getConfigListEntry(_("Display thumbnails"), config.plugins.iptvplayer.showcover))
-        if config.plugins.iptvplayer.showcover.value:
-            list.append(getConfigListEntry(_("    Allowed formats of thumbnails"), config.plugins.iptvplayer.allowedcoverformats))
-            list.append(getConfigListEntry(_("    Remove thumbnails"), config.plugins.iptvplayer.deleteIcons))
+        #if config.plugins.iptvplayer.showcover.value:
+        #    list.append(getConfigListEntry(_("    Allowed formats of thumbnails"), config.plugins.iptvplayer.allowedcoverformats))
+        #    list.append(getConfigListEntry(_("    Remove thumbnails"), config.plugins.iptvplayer.deleteIcons))
         #list.append(getConfigListEntry("Sortować listy?", config.plugins.iptvplayer.sortuj))            
         list.append(getConfigListEntry(_("Graphic services selector"), config.plugins.iptvplayer.ListaGraficzna))
         if config.plugins.iptvplayer.ListaGraficzna.value == True:
-            list.append(getConfigListEntry(_("    Service icon size"), config.plugins.iptvplayer.IconsSize))
+            #list.append(getConfigListEntry(_("    Service icon size"), config.plugins.iptvplayer.IconsSize))
             list.append(getConfigListEntry(_("    Number of rows"), config.plugins.iptvplayer.numOfRow))
             list.append(getConfigListEntry(_("    Number of columns"), config.plugins.iptvplayer.numOfCol))
         
@@ -370,7 +370,7 @@ class ConfigMenu(ConfigBaseWidget):
         
         list.append(getConfigListEntry(_("Autoplay start delay"), config.plugins.iptvplayer.autoplay_start_delay))
         list.append(getConfigListEntry(_("The number of items in the search history"), config.plugins.iptvplayer.search_history_size))
-        list.append(getConfigListEntry(_("Block wmv files"), config.plugins.iptvplayer.ZablokujWMV))
+        #list.append(getConfigListEntry(_("Block wmv files"), config.plugins.iptvplayer.ZablokujWMV))
         list.append(getConfigListEntry(_("Show IPTVPlayer in extension list"), config.plugins.iptvplayer.showinextensions))
         #list.append(getConfigListEntry(_("Show IPTVPlayer in main menu"), config.plugins.iptvplayer.showinMainMenu))
         #list.append(getConfigListEntry(_("Show update icon in service selection menu"), config.plugins.iptvplayer.AktualizacjaWmenu))

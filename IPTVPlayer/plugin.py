@@ -46,7 +46,7 @@ def startIPTVfromMenu(menuid, **kwargs):
     if menuid == "system":
         return [(_("Configure IPTV Player"), mainSetup, "iptv_config", None)]
     elif menuid == "mainmenu" and config.plugins.iptvplayer.showinMainMenu.value == True:
-        return [("IPTV Player", main, "iptv_main", None)]
+        return [("IPTV Player", main, "iptv_main", 1)]
     else:
         return []
     
