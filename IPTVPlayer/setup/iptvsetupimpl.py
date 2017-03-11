@@ -41,6 +41,7 @@ class IPTVSetupImpl:
         self.libSSLPath = ""
         self.supportedPlatforms = ["sh4", "mipsel", "i686", "armv7", "armv5t"]
         self.platform = "unknown"
+        self.glibcVersion = -1
         
         # wget members
         self.wgetVersion = 15 # 1.15 
@@ -97,6 +98,10 @@ class IPTVSetupImpl:
         self.subparserVersion = 0.4
         self.subparserPaths = [resolveFilename(SCOPE_PLUGINS, 'Extensions/IPTVPlayer/libs/iptvsubparser/_subparser.so')]
         
+        # hlsdl
+        self.hlsdlVersion = 0.03
+        self.hlsdlPaths = [resolveFilename(SCOPE_PLUGINS, 'Extensions/IPTVPlayer/bin/hlsdl')]
+        
         self.binaryInstalledSuccessfully = False
         self.tries = 0
         
@@ -134,6 +139,31 @@ class IPTVSetupImpl:
        
     def start(self):
         printDBG("IPTVSetupImpl.showMessage")
+        self.glibcVerDetect()
+        
+    ###################################################
+    # STEP: GLIBC VERSION DETECTION
+    ###################################################
+    def glibcVerDetect(self):
+        printDBG("IPTVSetupImpl.glibcVerDetect")
+        self.setInfo(_("Detection of glibc version."), _("Detection version of installed standard C library."))
+        cmdTabs = []
+        cmdTabs.append("ls /lib/libc-*.so 2>&1")
+        
+        def _glibcVerValidator(code, data):
+            printDBG("IPTVSetupImpl._glibcVerValidator")
+            return True,False
+        self.workingObj = CCmdValidator(self.glibcVerDetectFinished, _glibcVerValidator, cmdTabs)
+        self.workingObj.start()
+        
+    def glibcVerDetectFinished(self, stsTab, dataTab):
+        printDBG("IPTVSetupImpl.glibcVerDetectFinished")
+        
+        try: 
+            self.glibcVersion = int(float(re.search("libc\-([0-9]+?\.[0-9]+?)\.", dataTab[-1]).group(1)) * 1000)
+        except Exception: 
+            self.glibcVersion = -1
+            
         self.platformDetect()
 
     ###################################################
@@ -502,6 +532,69 @@ class IPTVSetupImpl:
     
     def subparserStepFinished(self, sts, ret=None):
         printDBG("IPTVSetupImpl.subparserStepFinished sts[%r]" % sts)
+        self.hlsdlStep()
+    
+    ###################################################
+    # STEP: hlsdl
+    ###################################################
+    def hlsdlStep(self, ret=None):
+        printDBG("IPTVSetupImpl.hlsdlStep")
+        self.binaryInstalledSuccessfully = False
+            
+        def _detectValidator(code, data):
+            if 'hlsdl v' in data:
+                try:
+                    tmp = re.search("hlsdl v([0-9.]+?)[^0-9^.]", data).group(1)
+                    if float(tmp) >= self.hlsdlVersion:
+                        return True,False
+                except Exception:
+                    printExc()
+            return False,True
+        
+        def _deprecatedHandler(paths, stsTab, dataTab):
+            sts, retPath = False, ""
+            for idx in range(len(dataTab)):
+                if 'hlsdl v' in dataTab[idx]: sts, retPath = True, paths[idx]
+            return sts, retPath
+        
+        def _downloadCmdBuilder(binName, platform, openSSLVersion, server, tmpPath):
+            old = ''
+            versions = {'sh4':2190, 'mipsel':2200}
+            
+            if platform in ['sh4', 'mipsel'] and (self.binaryInstalledSuccessfully or self.glibcVersion < versions[platform] ):
+                old = '_old'
+            
+            if old == '' and platform == 'mipsel' and not IsFPUAvailable():
+                old = '_softfpu'
+            
+            url = server + 'bin/' + platform + ('/%s%s' % (binName, old)) + '_static_curl_openssl' + openSSLVersion
+            if self.binaryInstalledSuccessfully:
+                self.binaryInstalledSuccessfully = False
+                
+            tmpFile = tmpPath + binName
+            cmd = SetupDownloaderCmdCreator(url, tmpFile) + ' > /dev/null 2>&1'
+            return cmd
+        
+        self.stepHelper = CBinaryStepHelper("hlsdl", self.platform, self.openSSLVersion, config.plugins.iptvplayer.hlsdlpath)
+        msg1 = _("hlsdl downloader")
+        msg2 = _("\nFor more info please ask samsamsam@o2.pl")
+        msg3 = _('It improves HLS/M3U8 stream download.\n')
+        self.stepHelper.updateMessage('detection', msg1, 0)
+        self.stepHelper.updateMessage('detection', msg2, 1)
+        self.stepHelper.updateMessage('not_detected_2', msg1 + _(' has not been detected. \nDo you want to install it? ') + msg3 + msg2, 1)
+        self.stepHelper.updateMessage('deprecated_2', msg1 + _(' is deprecated. \nDo you want to install new one? ') + msg3 + msg2, 1)
+        
+        self.stepHelper.setInstallChoiseList( [('hlsdl', self.hlsdlPaths[0])] )
+        self.stepHelper.setPaths( self.hlsdlPaths )
+        self.stepHelper.setDetectCmdBuilder( lambda path: path + " 2>&1 " )
+        self.stepHelper.setDetectValidator( _detectValidator )
+        self.stepHelper.setDownloadCmdBuilder( _downloadCmdBuilder )
+        self.stepHelper.setDeprecatedHandler( _deprecatedHandler )
+        self.stepHelper.setFinishHandler( self.hlsdlStepFinished )
+        self.binaryDetect()
+    
+    def hlsdlStepFinished(self, sts, ret=None):
+        printDBG("IPTVSetupImpl.hlsdlStepFinished sts[%r]" % sts)
         self.f4mdumpStep()
         
     ###################################################

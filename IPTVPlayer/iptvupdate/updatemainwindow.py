@@ -457,6 +457,7 @@ class UpdateMainAppImpl(IUpdateObjectInterface):
             binariesTab = [('exteplayer3', config.plugins.iptvplayer.exteplayer3path.value), \
                            ('gstplayer', config.plugins.iptvplayer.gstplayerpath.value), \
                            ('wget', config.plugins.iptvplayer.wgetpath.value), \
+                           ('hlsdl', config.plugins.iptvplayer.hlsdlpath.value), \
                            ('f4mdump', config.plugins.iptvplayer.f4mdumppath.value), \
                            ('uchardet', config.plugins.iptvplayer.uchardetpath.value)]
             for binItem in binariesTab:

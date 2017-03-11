@@ -49,32 +49,11 @@ def gettytul():
 class EskaGo(CBaseHostClass):
     # CHANNELS_URL and MAINURL_VOD taken from http://svn.sd-xbmc.org/filedetails.php?repname=sd-xbmc&path=%2Ftrunk%2Fxbmc-addons%2Fsrc%2Fplugin.video.polishtv.live%2Fhosts%2Feskago.py
     CHANNELS_URL =  'http://www.eskago.pl/indexajax.php?action=SamsungSmartTvV1&start=channelsGroups'
-
-    MAINURL_VOD = 'http://www.eskago.pl/indexajax.php?action=MobileApi'
-
-    MAIN_CAT_TAB = [{'category':'channels_group',        'title':_('Kanały'),   'url': CHANNELS_URL},
-                    #{'category':'series_list_abc',       'title':_('Seriale'), 'url': SERIES_URL},
-                    #{'category':'search',                'title':_('Search'), 'search_item':True},
-                    #{'category':'search_history',        'title':_('Search history')} 
-                    ]
     
     def __init__(self):
         printDBG("EskaGo.__init__")
-        CBaseHostClass.__init__(self, {'history':'Joogle.pl'})
+        CBaseHostClass.__init__(self, {'history':'eskaGO.pl'})
         self.cacheChannels = None
-        
-    def _getFullUrl(self, url):
-        if 0 < len(url) and not url.startswith('http'):
-            url =  self.MAIN_URL + url
-        return url
-
-    def listsTab(self, tab, cItem):
-        printDBG("EskaGo.listsMainMenu")
-        for item in tab:
-            params = dict(cItem)
-            params.update(item)
-            params['name']  = 'category'
-            self.addDir(params)
             
     def _fillChannelsCache(self, url):
         printDBG("EskaGo._fillChannelsCache")
@@ -153,19 +132,44 @@ class EskaGo(CBaseHostClass):
 
     def getLinksForVideo(self, cItem):
         printDBG("EskaGo.getLinksForVideo [%s]" % cItem)
+        duplicates = []
         urlTab = []
         for urlItem in cItem.get('urls', []):
             url = urlItem['url']
             if url.split('?')[0].endswith('m3u8'):
-                data = getDirectM3U8Playlist(url, checkExt=False)
-                for item in data:
-                    item['url'] = urlparser.decorateUrl(item['url'], {'iptv_proto':'m3u8', 'iptv_livestream':True})
-                    urlTab.append(item)
+                streamUri = self.cm.ph.getSearchGroups(url, '/tv/([^/]+?/[^/]+?)/')[0]
+                if streamUri != '':
+                    urlItem = {'name': streamUri.split('_')[-1], 'url':streamUri, 'need_resolve':1}
+                    urlTab.append(urlItem)
+                
+                #data = getDirectM3U8Playlist(url, checkExt=False)
+                #for item in data:
+                #    item['url'] = urlparser.decorateUrl(item['url'], {'iptv_proto':'m3u8', 'iptv_livestream':True})
+                #    urlTab.append(item)
             else:
                 urlTab.append(urlItem)
+        return urlTab
+        
+    def getVideoLinks(self, videoUrl):
+        printDBG("T123MoviesTO.getVideoLinks [%s]" % videoUrl)
+        urlTab = []
+        
+        streamUri = videoUrl.replace('/', '-t/')
+        sts, videoUrl = self.cm.getPage('https://api.stream.smcdn.pl/api/secureToken.php', post_data={'streamUri':streamUri})
+        if not sts: return []
+        
+        printDBG('++++++++++++++++++++++++++')
+        printDBG(videoUrl)
+        printDBG('++++++++++++++++++++++++++')
+        
+        if self.cm.isValidUrl(videoUrl) and videoUrl.split('?')[0].endswith('m3u8'):
+            data = getDirectM3U8Playlist(videoUrl, checkExt=False)
+            for item in data:
+                item['url'] = urlparser.decorateUrl(item['url'], {'iptv_proto':'m3u8', 'iptv_livestream':True})
+                urlTab.append(item)
         
         return urlTab
-    
+        
     def handleService(self, index, refresh=0, searchPattern='', searchType=''):
         printDBG('EskaGo.handleService start')
         CBaseHostClass.handleService(self, index, refresh, searchPattern, searchType)
@@ -189,93 +193,3 @@ class IPTVHost(CHostBase):
     def getLogoPath(self):
         return RetHost(RetHost.OK, value = [GetLogoDir('eskagologo.png')])
 
-    def getLinksForVideo(self, Index = 0, selItem = None):
-        listLen = len(self.host.currList)
-        if listLen < Index and listLen > 0:
-            printDBG( "ERROR getLinksForVideo - current list is to short len: %d, Index: %d" % (listLen, Index) )
-            return RetHost(RetHost.ERROR, value = [])
-        
-        if self.host.currList[Index]["type"] not in ['audio', 'video']:
-            printDBG( "ERROR getLinksForVideo - current item has wrong type" )
-            return RetHost(RetHost.ERROR, value = [])
-
-        retlist = []
-        urlList = self.host.getLinksForVideo(self.host.currList[Index])
-        for item in urlList:
-            need_resolve = 0
-            name = self.host.cleanHtmlStr( item["name"] )
-            url  = item["url"]
-            retlist.append(CUrlItem(name, url, need_resolve))
-
-        return RetHost(RetHost.OK, value = retlist)
-    # end getLinksForVideo
-
-    def convertList(self, cList):
-        hostList = []
-        searchTypesOptions = [] # ustawione alfabetycznie
-        searchTypesOptions.append(("Filmy",  "filmy"))
-        searchTypesOptions.append(("Seriale","seriale"))
-        
-        for cItem in cList:
-            hostLinks = []
-            type = CDisplayListItem.TYPE_UNKNOWN
-            possibleTypesOfSearch = None
-
-            if 'category' == cItem['type']:
-                if cItem.get('search_item', False):
-                    type = CDisplayListItem.TYPE_SEARCH
-                    possibleTypesOfSearch = searchTypesOptions
-                else:
-                    type = CDisplayListItem.TYPE_CATEGORY
-            elif cItem['type'] == 'video':
-                type = CDisplayListItem.TYPE_VIDEO
-            elif 'more' == cItem['type']:
-                type = CDisplayListItem.TYPE_MORE
-            elif 'audio' == cItem['type']:
-                type = CDisplayListItem.TYPE_AUDIO
-                
-            if type in [CDisplayListItem.TYPE_AUDIO, CDisplayListItem.TYPE_VIDEO]:
-                url = cItem.get('url', '')
-                if '' != url:
-                    hostLinks.append(CUrlItem("Link", url, 1))
-                
-            title       =  self.host.cleanHtmlStr( cItem.get('title', '') )
-            description =  self.host.cleanHtmlStr( cItem.get('desc', '') )
-            icon        =  self.host.cleanHtmlStr( cItem.get('icon', '') )
-            
-            hostItem = CDisplayListItem(name = title,
-                                        description = description,
-                                        type = type,
-                                        urlItems = hostLinks,
-                                        urlSeparateRequest = 1,
-                                        iconimage = icon,
-                                        possibleTypesOfSearch = possibleTypesOfSearch)
-            hostList.append(hostItem)
-
-        return hostList
-    # end convertList
-
-    def getSearchItemInx(self):
-        try:
-            list = self.host.getCurrList()
-            for i in range( len(list) ):
-                if list[i]['category'] == 'search':
-                    return i
-        except Exception:
-            printDBG('getSearchItemInx EXCEPTION')
-            return -1
-
-    def setSearchPattern(self):
-        try:
-            list = self.host.getCurrList()
-            if 'history' == list[self.currIndex]['name']:
-                pattern = list[self.currIndex]['title']
-                search_type = list[self.currIndex]['search_type']
-                self.host.history.addHistoryItem( pattern, search_type)
-                self.searchPattern = pattern
-                self.searchType = search_type
-        except Exception:
-            printDBG('setSearchPattern EXCEPTION')
-            self.searchPattern = ''
-            self.searchType = ''
-        return

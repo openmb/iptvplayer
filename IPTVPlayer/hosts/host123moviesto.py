@@ -205,8 +205,12 @@ class T123MoviesTO(CBaseHostClass):
         episodeKeys = []
         episodeLinks = {}
         
+        printDBG("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+        printDBG(tab)
+        printDBG("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+        
         for item in tab:
-            title = item['title']
+            title = item['title'].replace(' 0', ' ')
             if title not in episodeKeys:
                 episodeLinks[title] = []
                 episodeKeys.append(title)
@@ -321,6 +325,9 @@ class T123MoviesTO(CBaseHostClass):
         serverId  = tmp[0]
         episodeId = tmp[1]
         referer   = tmp[2]
+        
+        if referer.endswith('/'):
+            referer += 'watching.html'
         
         sts, data = self.getPage(referer, self.defaultParams)
         if not sts: return []
