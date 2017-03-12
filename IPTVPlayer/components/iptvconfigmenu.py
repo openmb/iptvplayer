@@ -59,7 +59,7 @@ config.plugins.iptvplayer.ListaGraficzna     = ConfigYesNo(default = True)
 config.plugins.iptvplayer.NaszaSciezka       = ConfigDirectory(default = "/hdd/movie/") #, fixed_size = False)
 config.plugins.iptvplayer.bufferingPath      = ConfigDirectory(default = config.plugins.iptvplayer.NaszaSciezka.value) #, fixed_size = False)
 config.plugins.iptvplayer.buforowanie        = ConfigYesNo(default = False)
-config.plugins.iptvplayer.buforowanie_m3u8   = ConfigYesNo(default = True)
+config.plugins.iptvplayer.buforowanie_m3u8   = ConfigYesNo(default = False)
 config.plugins.iptvplayer.buforowanie_rtmp   = ConfigYesNo(default = False)
 config.plugins.iptvplayer.requestedBuffSize  = ConfigInteger(5, (1,120))
 config.plugins.iptvplayer.requestedAudioBuffSize  = ConfigInteger(256, (1,10240))
@@ -87,7 +87,7 @@ config.plugins.iptvplayer.defaultSH4MoviePlayer0         = ConfigSelection(defau
 config.plugins.iptvplayer.alternativeSH4MoviePlayer0     = ConfigSelection(default = "auto", choices = [ConfigPlayer("auto"),ConfigPlayer("mini"),ConfigPlayer("standard"),ConfigPlayer('exteplayer'),ConfigPlayer('extgstplayer')]) 
 
 #mipsel
-config.plugins.iptvplayer.defaultMIPSELMoviePlayer0      = ConfigSelection(default = "auto", choices = [ConfigPlayer("auto"),ConfigPlayer("mini"),ConfigPlayer("standard"),ConfigPlayer('extgstplayer'),ConfigPlayer('exteplayer')])
+config.plugins.iptvplayer.defaultMIPSELMoviePlayer0      = ConfigSelection(default = "standard", choices = [ConfigPlayer("auto"),ConfigPlayer("mini"),ConfigPlayer("standard"),ConfigPlayer('extgstplayer'),ConfigPlayer('exteplayer')])
 config.plugins.iptvplayer.alternativeMIPSELMoviePlayer0  = ConfigSelection(default = "auto", choices = [ConfigPlayer("auto"),ConfigPlayer("mini"),ConfigPlayer("standard"),ConfigPlayer('extgstplayer'),ConfigPlayer('exteplayer')])
 
 #i686
