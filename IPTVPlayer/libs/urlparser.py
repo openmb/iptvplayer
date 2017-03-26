@@ -381,6 +381,7 @@ class urlparser:
                        'tvope.com':            self.pp.parserTVOPECOM      ,
                        'fileone.tv':           self.pp.parserFILEONETV     ,
                        'userscloud.com':       self.pp.parserUSERSCLOUDCOM ,
+                       'tusfiles.net':         self.pp.parserUSERSCLOUDCOM ,
                        'hdgo.cc':              self.pp.parserHDGOCC        ,
                        'liveonlinetv247.info': self.pp.parserLIVEONLINETV247,
                        'streamable.com':       self.pp.parserSTREAMABLECOM  ,
@@ -1988,6 +1989,9 @@ class pageParser:
         sts, allData = self.cm.getPage(url)
         if not sts: return False
         
+        errMsg = clean_html(CParsingHelper.getDataBeetwenMarkers(allData, '<div class="delete"', '</div>')[1]).strip()
+        if errMsg != '': SetIPTVPlayerLastHostError(errMsg)
+        
         # get JS player script code from confirmation page
         sts, tmpData = CParsingHelper.getDataBeetwenMarkers(allData, ">eval(", '</script>', False)
         if sts:
@@ -2172,19 +2176,19 @@ class pageParser:
         sts, data = self.cm.getPage(url, params)
         
         # get JS player script code from confirmation page
-        sts, data = CParsingHelper.getDataBeetwenMarkers(data, ">eval(", '</script>')
+        tmp = CParsingHelper.getDataBeetwenMarkers(data, ">eval(", '</script>')[1]
         if not sts: return False
         # unpack and decode params from JS player script code
-        data = unpackJSPlayerParams(data, VIDUPME_decryptPlayerParams)
-        
-        printDBG(data)
+        tmp = unpackJSPlayerParams(tmp, VIDUPME_decryptPlayerParams)
+        if tmp != None: data = tmp + data
+        printDBG(tmp)
         subData = CParsingHelper.getDataBeetwenMarkers(data, "captions", '}')[1]
         subData = self.cm.ph.getSearchGroups(subData, '''['"](http[^'^"]+?)['"]''')[0]
         sub_tracks = []
         if (subData.startswith('https://') or subData.startswith('http://')) and (subData.endswith('.srt') or subData.endswith('.vtt')):
             sub_tracks.append({'title':'attached', 'url':subData, 'lang':'unk', 'format':'srt'})
         linksTab = []
-        links = self._findLinks(data, 'vidto.me', m1='hd', m2=']')
+        links = self._findLinks(data, 'vidto.me')
         for item in links:
             item['url'] = strwithmeta(item['url'], {'external_sub_tracks':sub_tracks})
             linksTab.append(item)
@@ -3325,16 +3329,18 @@ class pageParser:
             if errorItem in data:
                 SetIPTVPlayerLastHostError(_(errorItem))
                 break
-        sts, tmp = self.cm.ph.getDataBeetwenMarkers(data, '<div id="player_code"', '</div>', True)
-        sts, tmp = self.cm.ph.getDataBeetwenMarkers(tmp, ">eval(", '</script>')
-        if sts:
-            # unpack and decode params from JS player script code
-            data = unpackJSPlayerParams(tmp, VIDUPME_decryptPlayerParams)
-            printDBG(data)
-            # get direct link to file from params
-            file = self.cm.ph.getSearchGroups(data, r'''['"]?file['"]?[ ]*:[ ]*['"]([^"^']+)['"],''')[0]
-            if file.startswith('http'):
-                return file
+        tmp = self.cm.ph.getDataBeetwenMarkers(data, '<div id="player_code"', '</div>', True)[1]
+        tmp = self.cm.ph.getDataBeetwenMarkers(tmp, ">eval(", '</script>')[1]
+        # unpack and decode params from JS player script code
+        tmp = unpackJSPlayerParams(tmp, VIDUPME_decryptPlayerParams)
+        if tmp != None: data = tmp + data
+        # printDBG(data)
+        # get direct link to file from params
+        videoUrl = self.cm.ph.getSearchGroups(data, r'''['"]?file['"]?[ ]*:[ ]*['"]([^"^']+)['"],''')[0]
+        if self.cm.isValidUrl(videoUrl): return videoUrl
+        videoUrl = self.cm.ph.getSearchGroups(data, '''<source[^>]+?src=['"]([^'^"]+?)['"][^>]+?["']video''')[0]
+        if self.cm.isValidUrl(videoUrl): return videoUrl
+        
         return False
         
     def parseTUNEPK(self, url):
@@ -5075,6 +5081,9 @@ class pageParser:
         if not sts: return False
         
         authKey = self.cm.ph.getSearchGroups(pageData, r"""Key\s*=\s*['"]([^'^"]+?)['"]""")[0]
+        try_again = self.cm.ph.getSearchGroups(pageData, r"""try_again\s*=\s*['"]([^'^"]+?)['"]""")[0]
+        if len(try_again) > len(authKey): authKey = try_again
+        
         params['header']['Referer'] = url
         sts, authKey = self.cm.getPage('http://thevideo.me/jwv/' + authKey, params)
         if not sts: return False
@@ -6318,6 +6327,8 @@ class pageParser:
         sts, data = self.cm.getPage(baseUrl, {'header':HTTP_HEADER})
         if not sts: return False
         
+        orgData = data
+        
         if 'content-blocked' in data:
             msg = clean_html(self.cm.ph.getDataBeetwenMarkers(data, '<img class="image-blocked"', '</div>')[1]).strip()
             if msg == '': msg = clean_html(self.cm.ph.getDataBeetwenMarkers(data, '<p class="lead"', '</p>')[1]).strip()
@@ -6421,6 +6432,7 @@ class pageParser:
                 decodestring = decodestring.replace("+","")
                 decodestring = decodestring.replace("\"","")
             return decodestring
+        
         preDataTab = self.cm.ph.getAllItemsBeetwenMarkers(data, 'a="0%', '{}', withMarkers=True, caseSensitive=False)
         for item in preDataTab:
             try:
@@ -6477,32 +6489,73 @@ class pageParser:
         encTab = re.compile('''<span[^>]+?id="%s[^"]*?"[^>]*?>([^<]+?)<\/span>''' % varName).findall(data)
         printDBG(">>>>>>>>>>>> varName[%s] encTab[%s]" % (varName, encTab) )
         
-        def __decode_k(k):
-            y = ord(k[0]);
-            e = y - 0x32
-            d = max(2, e)
-            e = min(d, len(k) - 0x14 - 2)
-            t = k[e:e + 0x14]
-            h = 0
-            g = []
-            while h < len(t):
-                f = t[h:h+2]
-                g.append(int(f, 0x10))
-                h += 2
-            v = k[0:e] + k[e+0x14:]
-            p = []
-            h = 0
-            while h < len(v):
-                B = v[h:h + 2]
-                f = int(B, 0x10)
-                A = g[(h / 2) % 0xa]
-                f = f ^ 0x89;
-                f = f ^ A;
-                p.append( chr(f) )
-                h += 2
+        def __decode_k(k, p0, p1, p2):
+            try:
+                y = ord(k[0]);
+                e = y - p1
+                d = max(2, e)
+                e = min(d, len(k) - p0 - 2)
+                t = k[e:e + p0]
+                h = 0
+                g = []
+                while h < len(t):
+                    f = t[h:h+3]
+                    g.append(int(f, 0x8))
+                    h += 3
+                v = k[0:e] + k[e+p0:]
+                p = []
+                i = 0
+                h = 0
+                while h < len(v):
+                    B = v[h:h + 2]
+                    C = v[h:h + 3]
+                    D = v[h:h + 4]
+                    f = int(B, 0x10)
+                    h += 0x2
+                    
+                    if (i % 3) == 0:
+                        f = int(C, 8)
+                        h += 1
+                    elif i % 2 == 0 and i != 0 and ord(v[i-1]) < 0x3c:
+                        f = int(D, 0xa)
+                        h += 2
+                        
+                    A = g[i % p2]
+                    f = f ^ 0xd5;
+                    f = f ^ A;
+                    p.append( chr(f) )
+                    i += 1
+            except Exception:
+                printExc()
+                return ''
+                
             return "".join(p)
-
-        dec = __decode_k(encTab[0])
+            
+        tab = [(0x24, 0x37, 0x7), (0x1e, 0x34, 0x6)]
+        try: 
+            orgData = self.cm.ph.getDataBeetwenMarkers(orgData, '$(document)', '}});')[1].decode('string_escape')
+            printDBG("++++++++++++++++++++++++++++++++")
+            printDBG(orgData)
+            printDBG("++++++++++++++++++++++++++++++++")
+            p0 = self.cm.ph.getDataBeetwenMarkers(orgData, "splice", ';')[1]
+            p0 = self.cm.ph.getSearchGroups(p0, "\,(0x[0-9a-fA-F]+?)\)")[0]
+            p1 = self.cm.ph.getDataBeetwenMarkers(orgData, "'#'", 'continue;')[1]
+            p1 = self.cm.ph.getSearchGroups(p1, "\,(0x[0-9a-fA-F]+?)\)")[0]
+            p2 = self.cm.ph.rgetDataBeetwenMarkers2(orgData, '^=0x', 'var ')[1]
+            p2 = self.cm.ph.getSearchGroups(p2, "\,(0x[0-9a-fA-F]+?)\)")[0]
+            printDBG("p0[%s] p1[%s] p2[%s]" % (p0, p1, p2))
+            tab.insert(0, (int(p0, 16), int(p1, 16), int(p2, 16)))
+        except Exception:
+            printExc()
+            
+        printDBG("++++++++++++++++++++++++++++++++")
+        printDBG(tab)
+        printDBG("++++++++++++++++++++++++++++++++")
+        
+        for item in tab:
+            dec = __decode_k(encTab[0], item[0], item[1], item[2])
+            if dec != '': break
+        
         videoUrl = 'https://openload.co/stream/{0}?mime=true'.format(dec)
         params = dict(HTTP_HEADER)
         params['external_sub_tracks'] = subTracks

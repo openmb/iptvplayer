@@ -23,6 +23,7 @@ try:    import json
 except Exception: import simplejson as json
 from datetime import datetime
 from copy import deepcopy
+from hashlib import md5
 from Components.config import config, ConfigSelection, ConfigYesNo, ConfigText, getConfigListEntry
 ###################################################
 
@@ -59,7 +60,7 @@ class TreeTv(CBaseHostClass):
         self.AJAX_HEADER = dict(self.HEADER)
         self.AJAX_HEADER.update( {'X-Requested-With': 'XMLHttpRequest'} )
         
-        self.defaultParams = {'header':self.HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE, 'cookie_items':{'mycook':str(int(time.time()*1000))}}
+        self.defaultParams = {'header':self.HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE, 'cookie_items':{'mycook':md5(str(time.time())).hexdigest()}}
         
         self.MAIN_URL = 'http://tree.tv/'
         self.DEFAULT_ICON_URL = 'http://sales.admixer.ua/Home/GetImg?p=http%3A%2F%2Fcdn.admixer.net%2Fteaseradsources%2Flogo_treetv_1.jpg&w=200'
@@ -278,6 +279,17 @@ class TreeTv(CBaseHostClass):
                 if not self.cacheLinks[idx]['name'].startswith('*'):
                     self.cacheLinks[idx]['name'] = '*' + self.cacheLinks[idx]['name']
                 break
+                
+        #sts, data = self.cm.getPage('http://tree.tv/film/index/imprint', self.defaultParams, {'result':self.defaultParams['cookie_items']['mycook']})
+        
+        params = dict(self.defaultParams)
+        params['header'] = dict(self.AJAX_HEADER)
+        params['header']['Referer'] = str('http://tree.tv/')
+        params['raw_post_data'] = True
+        
+        sts, data = self.cm.getPage('http://tree.tv/film/index/imprint', params, 'result=' + self.defaultParams['cookie_items']['mycook'] + '&components%5B0%5D%5Bkey%5D=user_agent&components%5B0%5D%5Bvalue%5D=Mozilla%2F5.0+(Windows+NT+6.1%3B+WOW64)+AppleWebKit%2F537.36+(KHTML%2C+like+Gecko)+Chrome%2F52.0.2743.116+Safari%2F537.36&components%5B1%5D%5Bkey%5D=language&components%5B1%5D%5Bvalue%5D=&components%5B2%5D%5Bkey%5D=color_depth&components%5B2%5D%5Bvalue%5D=24&components%5B3%5D%5Bkey%5D=pixel_ratio&components%5B3%5D%5Bvalue%5D=1&components%5B4%5D%5Bkey%5D=hardware_concurrency&components%5B4%5D%5Bvalue%5D=unknown&components%5B5%5D%5Bkey%5D=resolution&components%5B5%5D%5Bvalue%5D%5B%5D=1920&components%5B5%5D%5Bvalue%5D%5B%5D=1080&components%5B6%5D%5Bkey%5D=available_resolution&components%5B6%5D%5Bvalue%5D%5B%5D=1920&components%5B6%5D%5Bvalue%5D%5B%5D=1040&components%5B7%5D%5Bkey%5D=timezone_offset&components%5B7%5D%5Bvalue%5D=-60&components%5B8%5D%5Bkey%5D=session_storage&components%5B8%5D%5Bvalue%5D=1&components%5B9%5D%5Bkey%5D=local_storage&components%5B9%5D%5Bvalue%5D=1&components%5B10%5D%5Bkey%5D=indexed_db&components%5B10%5D%5Bvalue%5D=1&components%5B11%5D%5Bkey%5D=cpu_class&components%5B11%5D%5Bvalue%5D=unknown&components%5B12%5D%5Bkey%5D=navigator_platform&components%5B12%5D%5Bvalue%5D=unknown&components%5B13%5D%5Bkey%5D=do_not_track&components%5B13%5D%5Bvalue%5D=1&components%5B14%5D%5Bkey%5D=regular_plugins&components%5B14%5D%5Bvalue%5D%5B%5D=&components%5B15%5D%5Bkey%5D=canvas&components%5B15%5D%5Bvalue%5D=&components%5B16%5D%5Bkey%5D=webgl&components%5B16%5D%5Bvalue%5D=&components%5B17%5D%5Bkey%5D=adblock&components%5B17%5D%5Bvalue%5D=false&components%5B18%5D%5Bkey%5D=has_lied_languages&components%5B18%5D%5Bvalue%5D=false&components%5B19%5D%5Bkey%5D=has_lied_resolution&components%5B19%5D%5Bvalue%5D=false&components%5B20%5D%5Bkey%5D=has_lied_os&components%5B20%5D%5Bvalue%5D=false&components%5B21%5D%5Bkey%5D=has_lied_browser&components%5B21%5D%5Bvalue%5D=true&components%5B22%5D%5Bkey%5D=touch_support&components%5B22%5D%5Bvalue%5D%5B%5D=0&components%5B22%5D%5Bvalue%5D%5B%5D=false&components%5B22%5D%5Bvalue%5D%5B%5D=false&components%5B23%5D%5Bkey%5D=js_fonts&components%5B23%5D%5Bvalue%5D%5B%5D=Arial')
+        params['header']['Referer'] = str(videoUrl)
+        sts, data = self.cm.getPage('http://tree.tv/film/index/imprint', params, 'result=' + self.defaultParams['cookie_items']['mycook'] + '&components%5B0%5D%5Bkey%5D=user_agent&components%5B0%5D%5Bvalue%5D=Mozilla%2F5.0+(Windows+NT+6.1%3B+WOW64)+AppleWebKit%2F537.36+(KHTML%2C+like+Gecko)+Chrome%2F52.0.2743.116+Safari%2F537.36&components%5B1%5D%5Bkey%5D=language&components%5B1%5D%5Bvalue%5D=&components%5B2%5D%5Bkey%5D=color_depth&components%5B2%5D%5Bvalue%5D=24&components%5B3%5D%5Bkey%5D=pixel_ratio&components%5B3%5D%5Bvalue%5D=1&components%5B4%5D%5Bkey%5D=hardware_concurrency&components%5B4%5D%5Bvalue%5D=unknown&components%5B5%5D%5Bkey%5D=resolution&components%5B5%5D%5Bvalue%5D%5B%5D=1920&components%5B5%5D%5Bvalue%5D%5B%5D=1080&components%5B6%5D%5Bkey%5D=available_resolution&components%5B6%5D%5Bvalue%5D%5B%5D=1920&components%5B6%5D%5Bvalue%5D%5B%5D=1040&components%5B7%5D%5Bkey%5D=timezone_offset&components%5B7%5D%5Bvalue%5D=-60&components%5B8%5D%5Bkey%5D=session_storage&components%5B8%5D%5Bvalue%5D=1&components%5B9%5D%5Bkey%5D=local_storage&components%5B9%5D%5Bvalue%5D=1&components%5B10%5D%5Bkey%5D=indexed_db&components%5B10%5D%5Bvalue%5D=1&components%5B11%5D%5Bkey%5D=cpu_class&components%5B11%5D%5Bvalue%5D=unknown&components%5B12%5D%5Bkey%5D=navigator_platform&components%5B12%5D%5Bvalue%5D=unknown&components%5B13%5D%5Bkey%5D=do_not_track&components%5B13%5D%5Bvalue%5D=1&components%5B14%5D%5Bkey%5D=regular_plugins&components%5B14%5D%5Bvalue%5D%5B%5D=&components%5B15%5D%5Bkey%5D=canvas&components%5B15%5D%5Bvalue%5D=&components%5B16%5D%5Bkey%5D=webgl&components%5B16%5D%5Bvalue%5D=&components%5B17%5D%5Bkey%5D=adblock&components%5B17%5D%5Bvalue%5D=false&components%5B18%5D%5Bkey%5D=has_lied_languages&components%5B18%5D%5Bvalue%5D=false&components%5B19%5D%5Bkey%5D=has_lied_resolution&components%5B19%5D%5Bvalue%5D=false&components%5B20%5D%5Bkey%5D=has_lied_os&components%5B20%5D%5Bvalue%5D=false&components%5B21%5D%5Bkey%5D=has_lied_browser&components%5B21%5D%5Bvalue%5D=true&components%5B22%5D%5Bkey%5D=touch_support&components%5B22%5D%5Bvalue%5D%5B%5D=0&components%5B22%5D%5Bvalue%5D%5B%5D=false&components%5B22%5D%5Bvalue%5D%5B%5D=false&components%5B23%5D%5Bkey%5D=js_fonts&components%5B23%5D%5Bvalue%5D%5B%5D=Arial')
         
         sts, data = self.cm.getPage(videoUrl, self.defaultParams)
         if not sts: return []
@@ -326,10 +338,10 @@ class TreeTv(CBaseHostClass):
                     post_data = {'key':int(clientKey)}
                     sts, data = self.cm.getPage(tmpurl, params, post_data)
                     if not sts: return []
+                    printDBG("++++++++++++++")
+                    printDBG(data)
+                    printDBG("++++++++++++++")
                     serverData = byteify(json.loads(data))
-                    printDBG("++++++++++++++")
-                    printDBG(serverData)
-                    printDBG("++++++++++++++")
                 else:
                     break
                 
